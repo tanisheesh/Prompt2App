@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   eslint: {
-    ignoreDuringBuilds: true, // lint runs in CI only
+    ignoreDuringBuilds: true,
   },
   images: {
     remotePatterns: [
