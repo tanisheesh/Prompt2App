@@ -3,7 +3,7 @@ import type {NextConfig} from 'next';
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
-    ignoreBuildErrors: true, // suppress ts errors in prod
+    ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
