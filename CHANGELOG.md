@@ -28,6 +28,9 @@ All notable changes to **Prompt2App** are documented here.
 ### 🔒 Security
 - Isolated AI-generated scripts inside cross-origin `<iframe srcDoc>` without `allow-same-origin` and added Zod payload/audio size limits on all API routes
 
+### 👆 Dependencies
+- Upgraded framework stack to Next.js `16.4.6`, React `19.3.1`, TypeScript `7.0.2`, Zod `4.6.7`, and `lucide-react` `1.72.0`
+
 ### 💀 Removed
 - Removed legacy Firebase Genkit (`genkit`, `@genkit-ai/*`, `firebase`) dependencies and 28 unused template UI primitives/packages
 

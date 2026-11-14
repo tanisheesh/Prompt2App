@@ -59,6 +59,8 @@ src/
     storage.ts                   LocalStorage project/version manager with quota pruning
     types.ts                     Shared TypeScript interfaces
     utils.ts                     Tailwind class merge utility
+  types/
+    global.d.ts                  Asset & stylesheet module declarations for TypeScript 7
 ```
 
 ### Streaming Generation Route (`src/app/api/generate/route.ts`)
