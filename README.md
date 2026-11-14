@@ -44,7 +44,7 @@ Spinning up an interactive internal utility, analytics dashboard, calculator, or
 
 | Layer | Tech |
 |---|---|
-| Frontend | Next.js 15 (App Router, Turbopack) · React 18 · TypeScript 5 · Tailwind CSS 3 · Radix UI |
+| Frontend | Next.js 16 (App Router, Turbopack) · React 19 · TypeScript 7 · Tailwind CSS 3 · Radix UI |
 | Backend API | Next.js Route Handlers (`ReadableStream` streaming) · Zod request validation |
 | AI & Speech | Groq Cloud SDK (`groq-sdk`) · `openai/gpt-oss-120b` · `qwen/qwen3.8-27b` · `openai/gpt-oss-20b` · `whisper-large-v3-turbo` |
 | Infra & Hosting | Vercel · GitHub Actions CI · Dependabot Auto-Merge |

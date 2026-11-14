@@ -10,7 +10,7 @@ For local development, see [SETUP.md](SETUP.md).
 
 | Piece | Runs on | Notes |
 |---|---|---|
-| Web app (`/` & `/studio`) | Vercel | Next.js 15 App Router static + dynamic routes |
+| Web app (`/` & `/studio`) | Vercel | Next.js 16 App Router static + dynamic routes |
 | Streaming AI endpoints (`/api/*`) | Vercel Functions | Node.js runtime (`maxDuration = 60` on `/api/generate`) |
 | DNS | GoDaddy | `prompt2app.tanisheesh.in` → CNAME to `cname.vercel-dns.com` |
 

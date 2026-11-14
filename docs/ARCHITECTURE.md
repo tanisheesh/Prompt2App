@@ -6,7 +6,7 @@
 
 | Layer | Tech |
 |---|---|
-| Framework | Next.js 15.3.3 (App Router, TypeScript 5, Turbopack) |
+| Framework | Next.js 16.4.6 (App Router, TypeScript 7, Turbopack) |
 | AI Code Generation | Groq Cloud SDK (`groq-sdk`) — `openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-20b` |
 | Speech-to-Text | Groq `whisper-large-v3-turbo` via `MediaRecorder` + `POST /api/transcribe` |
 | Styling & UI | Tailwind CSS 3 · Radix UI (`dialog`, `dropdown-menu`, `scroll-area`, `sheet`, `toast`) · Lucide Icons |
