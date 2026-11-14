@@ -2,6 +2,14 @@
   "name": "prompt2app",
   "version": "2.0.0",
   "private": true,
+  "keywords": [
+    "prompt2app",
+    "ai-app-builder",
+    "groq",
+    "nextjs",
+    "typescript",
+    "html-generator"
+  ],
   "scripts": {
     "dev": "next dev -p 9002",
     "build": "next build",
