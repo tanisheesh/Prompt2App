@@ -2,99 +2,95 @@
 
 **Status:** Final
 **Owner:** Tanish Poddar
-**One-liner:** Describe any web app in plain English (or by voice) and get a fully working, downloadable HTML app in seconds, powered by Google Gemini.
+**One-liner:** Turn plain English or spoken prompts into working, multi-version, zero-dependency HTML5 web apps in seconds — powered by Groq LPU.
 
 ---
 
 ## 1. Problem
 
-Building a quick interactive prototype — a calculator, a planner, a quiz, a timer — requires writing HTML, CSS, and JavaScript from scratch, which is a barrier for non-developers and time-consuming even for experienced engineers. Existing tools either require design skills (Figma), coding fluency (CodePen), or produce static mockups that aren't actually functional. There is no zero-barrier tool that takes a plain English description and immediately produces a working, runnable app the user can download and use anywhere.
+Building a quick interactive web tool — a SaaS telemetry dashboard, a Kanban board, an expense tracker, a synthesizer, or an API client — traditionally requires creating a project, installing packages, configuring bundlers, and writing hundreds of lines of HTML, CSS, and JavaScript. Existing prototyping tools either stop at static visual mockups (Figma) or require manual coding fluency (CodePen). Prompt2App eliminates that gap by converting a natural-language or spoken specification into a working, self-contained HTML5 application that runs immediately inside a sandboxed workbench and exports as a zero-dependency `.html` file.
 
 ---
 
-## 2. Goals (v1 / MVP)
+## 2. Goals (v2)
 
-1. Accept a natural language text prompt describing the desired web app.
-2. Accept voice input via the browser's Web Speech API as an alternative to typing.
-3. Call Google Gemini via Genkit server-side and return a complete, self-contained HTML app.
-4. Render the generated app as a live interactive preview inside a sandboxed iframe.
-5. Expose the raw generated HTML in a "Code" tab for inspection.
-6. Allow the user to download the generated HTML as a standalone `.html` file.
-7. Allow the user to regenerate (re-run the same prompt) for a different result.
-8. Deployed with a live, publicly accessible demo URL.
+1. Stream complete, runnable single-file HTML5 applications in real time via Groq LPU (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-20b`) at 500–1,000 tokens/sec.
+2. Provide a dedicated product landing page (`/`) and an interactive full-screen Studio workbench (`/studio`).
+3. Support conversational multi-turn refinement (`v1`, `v2`, `v3`...) with version history stored locally in the user's browser.
+4. Provide 1-click AI prompt expansion (`/api/enhance`) to turn brief 3-word ideas into detailed product specifications.
+5. Support cross-browser voice dictation via `MediaRecorder` + Groq `whisper-large-v3-turbo` (`/api/transcribe`).
+6. Render generated apps inside an isolated cross-origin `<iframe srcDoc>` with responsive Desktop (`100%`), Tablet (`768px`), and Mobile (`390px`) frames.
+7. Prevent sandboxed storage crashes via an injected `localStorage` polyfill and surface uncaught JS errors with a 1-click **Fix error** action.
+8. Allow 1-click export of the generated application as a standalone `.html` file, clipboard copy, or standalone browser tab preview.
 
 ---
 
 ## 3. Non-Goals (explicit scope cuts)
 
-- **User accounts or saved history** — The tool is stateless by design for v1; adding auth and a DB is a significant scope increase with limited MVP benefit.
-- **Multi-step prompt refinement** — One-shot generation covers the core use case; a refinement loop requires conversation state management.
-- **Template / starter prompt library** — Useful UX but not required for the core value proposition; deferred to v2.
-- **Export to React / Vue component format** — Single-file HTML is universally runnable; framework-specific export adds complexity without clear MVP need.
-- **Generated app hosting** — Users download and self-host; Prompt2App is a generator, not a hosting platform.
+- **User accounts or cloud database** — Projects and version snapshots live in browser `localStorage`; keeping the server stateless eliminates auth friction and database infrastructure cost.
+- **Public community prompt feed** — User prompts and generated apps stay private on the user's device rather than being published to a shared gallery.
+- **Multi-file React/Next.js zip export** — A single self-contained `.html` file runs forever in any browser without Node.js, npm, or build steps.
+- **Hosted deployment of generated apps** — Prompt2App compiles and exports portable apps; users can drop the exported `.html` onto Vercel, Netlify, or GitHub Pages if they want public hosting.
 
 ---
 
 ## 4. Users
 
-**Primary:** Developers and students who want a working interactive prototype from a natural language description — without writing any HTML/CSS/JS.
+**Primary:** Developers, indie hackers, and students who want to go from a plain-English idea to a working interactive web utility or prototype in seconds without project boilerplate.
 
-**Secondary:** Non-technical users (designers, product managers, founders) who want to demonstrate an app idea; recruiters evaluating this as a portfolio piece and running it on their own prompts.
+**Secondary:** Product managers, designers, and founders demonstrating interactive product concepts; technical interviewers evaluating full-stack LLM streaming, sandboxing, and frontend craft.
 
 ---
 
 ## 5. User Stories
 
-1. *As a developer,* I type a description of my app idea so that I immediately get a working HTML prototype I can iterate on.
-2. *As a user who prefers speaking,* I use the voice input button so that I can describe my app without typing.
-3. *As a user,* I see a live interactive preview of the generated app so that I can verify it works before downloading.
-4. *As a technically curious user,* I switch to the Code tab so that I can read and learn from the generated HTML.
-5. *As a user,* I click "Save HTML" so that I can download the file and host or share it independently.
-6. *As a user,* I click "Regenerate" so that I can get a different version of the app if the first generation doesn't match my intent.
-7. *As a user,* I get a clear error message if generation fails so that I know what went wrong and can try again.
+1. *As a developer,* I describe an app in plain English and watch code stream live so that I have a working interactive prototype in seconds.
+2. *As a user with a brief idea,* I click **Enhance** so that my 4-word concept is expanded into a detailed UI and feature specification before building.
+3. *As a user who prefers speaking,* I record my prompt via microphone so that Groq Whisper transcribes it accurately in any browser.
+4. *As a user iterating on a prototype,* I type follow-up requests in the Studio sidebar (`v2`, `v3`...) and switch between versions so that I can add features without losing working snapshots.
+5. *As a responsive UI tester,* I switch between Desktop, Tablet (`768px`), and Mobile (`390px`) frames so that I can verify layout behavior across screen sizes.
+6. *As a user encountering a generated JS bug,* I click **Fix error** on the runtime diagnostics bar so that AI automatically patches the exception.
+7. *As a user ready to ship,* I click **Download HTML** so that I get a standalone `.html` file that runs offline in any browser.
 
 ---
 
 ## 6. Functional Requirements
 
-### 6.1 Prompt Input
+### 6.1 Prompt Composer & Starter Blueprints
 
-- A multi-line textarea accepts the user's app description.
-- A voice input button toggles browser Speech Recognition (Web Speech API, `en-US`, non-continuous).
-- Transcribed speech appends to the existing textarea content.
-- If the textarea is empty when "Create App" is clicked, a destructive toast is shown and generation does not start.
-- Voice button is disabled (with explanatory text) on browsers that do not support the Speech Recognition API.
+- Multi-line prompt composer accepts plain-English specifications and submits on `Enter` (`Shift+Enter` inserts newline).
+- Model dropdown switches between `GPT-OSS 120B` (default), `Qwen 3.8 27B`, and `GPT-OSS 20B`.
+- **Enhance** button sends the draft prompt to `POST /api/enhance` and replaces the input with the expanded specification.
+- Starter blueprint pills populate curated prompts or launch directly into `/studio`.
 
-### 6.2 AI Generation
+### 6.2 Voice Dictation
 
-- On submit, the prompt is sent to the `generateApp` Next.js Server Action.
-- The Server Action calls Genkit's `generateAppFlow`, which invokes Google Gemini 2.0 Flash with a structured output schema.
-- A loading spinner replaces the results area during generation.
-- On success, the generated HTML string is stored in component state.
-- On failure (network error, API error, invalid output), a descriptive destructive toast is shown.
+- Microphone button captures audio using `MediaRecorder` (`audio/webm;codecs=opus`, `audio/webm`, or `audio/mp4` fallback for Safari).
+- Live recording timer (`0:00`) displays while active; stopping uploads the audio blob to `POST /api/transcribe` (`whisper-large-v3-turbo`) and appends the transcript to the prompt.
+- Unmounting the component immediately stops active hardware microphone tracks.
 
-### 6.3 Preview
+### 6.3 Streaming AI Generation & Refinement
 
-- Generated HTML is rendered in an `<iframe srcDoc>` with `sandbox="allow-scripts allow-forms allow-popups"` (no `allow-same-origin`).
-- The preview iframe is 500px tall and fills the container width.
-- A tabbed interface provides a "Preview" tab (default) and a "Code" tab.
-- The Code tab displays the raw HTML in a scrollable, monospace pre block.
+- `POST /api/generate` validates `{ prompt, model?, currentCode? }` with Zod and streams tokens from Groq over a `ReadableStream`.
+- If the primary model fails or rate-limits, the server automatically cascades through `FALLBACK_MODELS`.
+- Clicking **Stop** aborts the client `fetch` and cancels the upstream Groq stream via `AbortSignal`.
+- `cleanHtmlOutput()` strips `<think>...</think>` blocks and outer markdown fences while preserving inline JS template literals.
 
-### 6.4 Actions
+### 6.4 Studio Workbench & Local Persistence
 
-- **Regenerate** — re-invokes `generateApp` with the same current prompt; replaces the existing preview.
-- **Clear** — removes the generated code from state, hiding the preview section.
-- **Save HTML** — creates a Blob from the HTML string, triggers a browser download of `prompt2app_preview.html`.
+- Unified Studio toolbar provides `Preview`, `Code`, and `Split` views, `Desktop` / `Tablet` / `Mobile` viewport frames, model switching, reload, open in new tab, fullscreen (`Esc` to exit), copy, and `.html` download.
+- Projects and up to 15 version snapshots per project persist in `localStorage` (`prompt2app_projects_v2`) with automatic quota-safe pruning.
+- `injectSandboxRuntime()` injects an in-memory `Storage` fallback, empty-anchor navigation guard, and `window.onerror` / `unhandledrejection` `postMessage` bridge into the preview iframe.
 
 ---
 
 ## 7. Non-Functional Requirements
 
-- **Latency:** Generation time is bounded by Gemini API response time (typically 5–20s). No additional server-side processing delay.
-- **Security:** `GOOGLE_GENAI_API_KEY` lives in `.env` (gitignored), accessed only inside the Server Action — never exposed to the browser. Generated app code runs in a sandboxed iframe with no same-origin access.
-- **Cost:** One Gemini API call per generation. No polling, background jobs, or per-page-load AI calls. Cost is proportional to usage.
-- **Reliability:** All AI calls wrapped in try/catch. Generation failure surfaces a user-facing error rather than a silent broken state.
-- **Accessibility:** Fully keyboard-navigable. ARIA labels on interactive controls. Mobile-responsive layout (single-column on small screens).
+- **Latency:** First streamed token in `< 600ms`; typical 250–450 line HTML app completes in `1.5–4.5s` on Groq LPU.
+- **Security:** `GROQ_API_KEY` accessed exclusively in server Route Handlers. Preview `<iframe>` omits `allow-same-origin` to enforce cross-origin isolation.
+- **Cost & Token Safety:** Hard Zod input limits (`12,000` chars prompt, `250,000` chars refinement context, `15 MB` audio) and immediate upstream stream abort on client disconnect.
+- **Reliability:** Multi-model fallback chain on `/api/generate` and `/api/enhance`; quota-safe `localStorage` persistence.
+- **Responsiveness:** Full mobile (`360px`), tablet (`768px`), and desktop layouts across both `/` and `/studio` (including slide-out mobile version drawer and quick-edit bar).
 
 ---
 
@@ -102,26 +98,36 @@ Building a quick interactive prototype — a calculator, a planner, a quiz, a ti
 
 | Metric | Target |
 |---|---|
-| Live demo reliability | First visit → generated app working within one attempt |
-| Generation success rate | >90% of well-formed prompts return working HTML |
-| Voice input usability | Works correctly in Chrome on desktop |
-| Preview interactivity | Generated apps respond to user interactions inside the iframe |
+| Time to complete interactive app | `< 5s` end-to-end on Groq LPU |
+| Sandbox crash rate on `localStorage` apps | `0%` (handled by injected storage polyfill) |
+| Cross-browser voice dictation | Works in Chrome, Edge, Firefox, and Safari |
+| Export portability | Downloaded `.html` opens offline with zero console errors |
 
 ---
 
 ## 9. Risks & Open Questions
 
-- **Gemini rate limits on free tier** — A spike in demo traffic could exhaust the API quota. Mitigated by on-demand calls only (no per-load AI calls), but no fallback model is configured.
-- **Generated HTML quality variance** — Gemini may produce non-functional JS for complex prompts. Mitigated by the detailed system prompt with explicit constraints and a worked example.
-- **Voice input browser support** — Web Speech API is Chrome-first; Firefox and Safari support is limited or behind flags. Mitigated by disabling the button and showing a message on unsupported browsers.
-- **Open question:** Should the iframe height be user-adjustable or auto-sized to content height? Currently fixed at 500px.
+- **Groq free/developer tier rate limits** — Sudden traffic spikes on a single model can hit TPM/RPM caps. Mitigated by automatic server-side fallback across `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, and `qwen/qwen3.8-27b`, plus upstream abort cancellation.
+- **CDN dependencies inside exported HTML** — Generated apps load Tailwind CSS or Chart.js from public CDNs (`cdn.tailwindcss.com`, `cdn.jsdelivr.net`), so initial offline load requires browser cache if not connected to the internet.
+- **Open question:** Should v3 support optional shareable read-only permalinks backed by edge KV storage?
 
 ---
 
-## 10. v2 Candidates
+## 10. v2+ Candidates
 
-- **Prompt history** — Save past generations to localStorage so users can revisit without re-running; requires no backend but adds local state complexity.
-- **Multi-step refinement** — "Improve this app: add dark mode" style follow-ups using conversation history.
-- **Model selection** — Let users choose Gemini 1.5 Pro (higher quality) vs Gemini 2.0 Flash (faster) per generation.
-- **Export to React component** — Wrap the generated HTML/JS in a React component scaffold for easier integration.
-- **Starter prompt gallery** — Curated example prompts (calculator, todo list, quiz, timer) to reduce blank-page friction.
+- **Incremental AST diff edits** — Patch targeted DOM/script sections during follow-up refinements instead of streaming the full HTML file on large apps.
+- **Image-to-App vision input** — Upload a wireframe screenshot alongside a text prompt using multimodal vision models.
+- **One-click deploy to Vercel / Netlify Drop** — Optional publish button for users who want an instant public URL for their generated app.
+
+---
+
+<div align="center">
+
+<h3>Tanish Poddar</h3>
+
+<a href="https://tanisheesh.in"><img src="https://img.shields.io/badge/Website-tanisheesh.in-111111?style=flat-square&logo=googlechrome&logoColor=white" alt="Website"></a>
+<a href="https://linkedin.com/in/tanisheesh"><img src="https://img.shields.io/badge/LinkedIn-tanisheesh-0A66C2?style=flat-square" alt="LinkedIn"></a>
+<a href="https://github.com/tanisheesh"><img src="https://img.shields.io/badge/GitHub-tanisheesh-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
+<a href="mailto:hi@tanisheesh.in"><img src="https://img.shields.io/badge/Email-hi%40tanisheesh.in-EA4335?style=flat-square&logo=gmail&logoColor=white" alt="Email"></a>
+
+</div>

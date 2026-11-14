@@ -1,15 +1,15 @@
 # Local Setup — Prompt2App
 
-> **Just want to try it?** Use the live demo at [prompt2app.tanisheesh.in](https://prompt2app.tanisheesh.in) — no setup needed.
+> **Just want to try it?** Use the live demo at [https://prompt2app.tanisheesh.in](https://prompt2app.tanisheesh.in) — no setup needed.
 > This guide is for running Prompt2App locally or self-hosting it.
 
 ---
 
 ## Prerequisites
 
-- Node.js 20+
-- npm (bundled with Node.js)
-- A Google AI Studio API key (`GOOGLE_GENAI_API_KEY`)
+- Node.js 20+ (Node 22 recommended)
+- `pnpm` 9+ (`corepack enable`)
+- A Groq Cloud API key (`GROQ_API_KEY`)
 
 ---
 
@@ -18,66 +18,62 @@
 ```bash
 git clone https://github.com/tanisheesh/Prompt2App
 cd Prompt2App
-npm install
+pnpm install
 ```
 
 ---
 
 ## 2. Environment variables
 
-Create a `.env.local` file in the project root:
+Copy `.env.example` to `.env.local` and fill in your Groq API key:
 
 ```bash
-# .env.local
-GOOGLE_GENAI_API_KEY=your_api_key_here
+cp .env.example .env.local
 ```
 
 | Variable | Where to get it |
 |---|---|
-| `GOOGLE_GENAI_API_KEY` | [Google AI Studio](https://aistudio.google.com) → "Get API Key" → Create API Key |
-
-> The `.env*` pattern is gitignored — your key will not be committed.
+| `GROQ_API_KEY` | [console.groq.com/keys](https://console.groq.com/keys) → Create API Key |
 
 ---
 
 ## 3. Run locally
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
-Prompt2App will be running at `http://localhost:9002`.
+Prompt2App will be running at `http://localhost:9002` (Landing Page at `/` and Studio Workbench at `/studio`).
 
----
-
-## 4. Genkit dev server (optional)
-
-The Genkit development server lets you inspect, test, and replay AI flows in a local UI — useful if you are modifying `src/ai/flows/app-generator.ts`.
+Verify type safety and production build locally before committing:
 
 ```bash
-# Start Genkit dev server (one-shot)
-npm run genkit:dev
-
-# Start with hot-reloading (recommended during flow development)
-npm run genkit:watch
+pnpm typecheck
+pnpm build
 ```
-
-The Genkit dev UI opens at `http://localhost:4000`.
 
 ---
 
-## 5. Deploy to production (Vercel)
+## 4. Deploy to production
 
-1. Push the repository to GitHub.
-2. Import the project in [Vercel](https://vercel.com).
-3. In the Vercel project dashboard → Settings → Environment Variables, add:
-   - `GOOGLE_GENAI_API_KEY` = your production API key
-4. Vercel auto-deploys on every push to `main`. No database migrations needed.
+See [DEPLOY.md](DEPLOY.md) for production deployment, custom domain, and rollback steps.
 
 ---
 
 ## Known local-only limitations
 
-- Voice input requires a secure context in some browsers. Chrome allows `localhost` without HTTPS; other browsers may block the Web Speech API.
-- Generated apps that use browser Notification API or camera/microphone APIs may require HTTPS even in the preview iframe — they will fail silently on `http://localhost`.
-- The preview `<iframe>` omits `allow-same-origin`, so generated apps cannot read/write `localStorage`. This is intentional (security), not a local-only issue.
+- Voice dictation (`MediaRecorder` / `navigator.mediaDevices.getUserMedia`) requires a secure context: `http://localhost:9002` works in all browsers, but accessing a LAN IP (`http://192.168.x.x:9002`) without HTTPS will block microphone access.
+- Inside the Studio preview `<iframe>`, `localStorage` uses an in-memory sandbox polyfill (`src/lib/sandbox.ts`) so state resets on preview refresh; downloaded `.html` files use persistent browser `localStorage`.
+
+---
+
+<div align="center">
+
+<h3>Tanish Poddar</h3>
+
+<a href="https://tanisheesh.in"><img src="https://img.shields.io/badge/Website-tanisheesh.in-111111?style=flat-square&logo=googlechrome&logoColor=white" alt="Website"></a>
+<a href="https://linkedin.com/in/tanisheesh"><img src="https://img.shields.io/badge/LinkedIn-tanisheesh-0A66C2?style=flat-square" alt="LinkedIn"></a>
+<a href="https://github.com/tanisheesh"><img src="https://img.shields.io/badge/GitHub-tanisheesh-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
+<a href="mailto:hi@tanisheesh.in"><img src="https://img.shields.io/badge/Email-hi%40tanisheesh.in-EA4335?style=flat-square&logo=gmail&logoColor=white" alt="Email"></a>
+
+</div>

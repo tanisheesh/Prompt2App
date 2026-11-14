@@ -1,75 +1,80 @@
 # Engineering Decisions — Prompt2App
 
-<!-- PURPOSE OF THIS FILE
-     This is not user documentation. This is for technical interviewers
-     and senior engineers who want to understand WHY the system is built
-     the way it is. Every entry should answer a question an interviewer
-     might ask.
--->
+---
+
+## Decision 1 — Streaming Groq LPU Route Handlers over Firebase Genkit + Gemini Server Actions
+
+**Context:** v1 used Firebase Genkit (`genkit`, `@genkit-ai/googleai`, `firebase`) inside a non-streaming Next.js Server Action with structured JSON output (`{ code: string }`). Users waited 10–20 seconds staring at a loading spinner until the entire HTML file finished generating.
+
+**Decision:** Replace Genkit and Gemini with the official `groq-sdk` and a streaming Route Handler (`POST /api/generate`) backed by `openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, and `openai/gpt-oss-20b`.
+
+**Reason:** Groq's LPU inference streams tokens at 500–1,000 tok/s, reducing end-to-end generation of 300-line interactive apps to 1.5–4 seconds. Using a `ReadableStream` Route Handler enables real-time line-count and `tok/s` telemetry, server-side model fallback, and instant upstream token cancellation via `req.signal` when the user clicks Stop.
+
+**Tradeoff:** Streaming raw HTML instead of blocking JSON schema mode requires deterministic post-processing (`cleanHtmlOutput()`) to strip `<think>` reasoning tags and outer markdown fences safely without touching inline JS template literals.
 
 ---
 
-## Decision 1 — Genkit + Gemini 2.0 Flash over direct API calls or other providers
+## Decision 2 — Strict Cross-Origin Sandbox (`sandbox` without `allow-same-origin`) + Injected Storage Shim
 
-**Context:** The project needed to call an LLM server-side, enforce a structured JSON output schema, and support a local dev workflow for iterating on prompts. Options included: raw `fetch` to the OpenAI or Anthropic API, LangChain, or Google's Firebase Genkit framework.
+**Context:** Generated apps execute arbitrary LLM-written JavaScript inside `<iframe srcDoc>`. Granting `allow-same-origin` would expose the host origin's `localStorage` (all saved projects), cookies, and DOM to XSS. However, omitting `allow-same-origin` places the iframe in an opaque origin where any call to `window.localStorage` throws a `DOMException: SecurityError`, crashing todo lists, kanban boards, and trackers.
 
-**Decision:** Firebase Genkit with `@genkit-ai/googleai` and `googleai/gemini-2.0-flash`.
+**Decision:** Keep `allow-same-origin` omitted on the preview `<iframe>` and inject a lightweight runtime script (`injectSandboxRuntime` in `src/lib/sandbox.ts`) into `<head>` before mounting `srcDoc`.
 
-**Reason:** Genkit provides a first-class structured output primitive (Zod schema enforcement on the model call) that eliminates the need for manual JSON parsing or prompt-engineering tricks to coerce output format. The `genkit start` dev server gives a local UI to inspect and replay flows without deploying. Gemini 2.0 Flash handles long HTML output (often 200–600 lines) without truncation at realistic token limits, and returns responses faster than GPT-4o-class models for this generation size.
+**Reason:** The injected script probes `window.localStorage` in a `try/catch` block and defines an in-memory `Storage`-compatible polyfill only when native storage is blocked, while leaving the user's downloaded `.html` file untouched so it uses real persistent `localStorage` when opened standalone. The same bridge captures uncaught runtime errors via `postMessage` to power 1-click AI bug fixing.
 
-**Tradeoff:** Genkit is a younger framework with less community documentation than LangChain. Lock-in to Google's AI ecosystem; switching providers requires replacing the plugin and re-testing structured output behaviour.
-
----
-
-## Decision 2 — Single-file HTML output rendered via `iframe srcDoc`
-
-**Context:** The app needs to show a working, interactive preview of the generated app instantly — without spinning up a server to execute code, without a remote sandbox (like CodeSandbox's API), and without shipping a complex runtime.
-
-**Decision:** Instruct Gemini to produce a complete self-contained HTML file (inline CSS + JS); render it via `<iframe srcDoc={generatedCode}>`.
-
-**Reason:** `srcDoc` rendering is zero-latency beyond the AI call itself — the browser parses and runs the HTML directly, no network request needed. Users can download this file and open it in any browser, forever, with no dependency on Prompt2App being live. It also makes the AI's task well-defined: "produce one HTML file" is a cleaner, more testable constraint than "produce a React app."
-
-**Tradeoff:** Generated apps are limited to vanilla JS and browser-native APIs. npm packages and server-side features are not available unless the generated code loads them from a CDN, which is fragile. `localStorage` also does not work in the sandboxed iframe because `allow-same-origin` is omitted for security (see Decision 4).
+**Tradeoff:** Data entered inside the Studio preview resets when the preview iframe reloads, whereas data entered in the downloaded standalone `.html` file persists across browser restarts.
 
 ---
 
-## Decision 3 — Next.js Server Action instead of a REST `/api/` route
+## Decision 3 — Immutable Version Snapshots (`v1`, `v2`, `v3`...) in `localStorage`
 
-**Context:** The Genkit flow must run server-side to keep `GOOGLE_GENAI_API_KEY` out of the browser. The standard Next.js approach is to create a `POST /api/generate` route handler. An alternative is a Server Action.
+**Context:** One-shot generation rarely produces the final product on the first prompt; users want to request follow-up refinements ("Add CSV export", "Add plan filters") without risking a broken edit overwriting a working app.
 
-**Decision:** `generateApp` is exported from `app-generator.ts` with `'use server'` — a Next.js Server Action called directly from the client component.
+**Decision:** Store each project in `localStorage` as an ordered array of immutable `AppVersion` snapshots (`prompt`, `code`, `model`, `durationMs`, `tokensPerSec`), passing the active version's `code` as context on follow-up edits.
 
-**Reason:** Eliminates a separate route file and the corresponding `fetch` + `JSON.stringify` + response parsing boilerplate. The Server Action is fully type-safe end-to-end: `GenerateAppInput` and `GenerateAppOutput` are shared TypeScript types, so a type mismatch is a compile error rather than a runtime surprise. The calling code reads like a normal async function call.
+**Reason:** Users get Git-like time travel across every iteration (`v1`, `v2`, `v3`...) with zero login friction and zero database hosting cost. Quota-safe pruning in `saveProjects()` automatically trims the oldest entries if the browser's 5 MB `localStorage` ceiling is reached.
 
-**Tradeoff:** Server Actions are a relatively new pattern. They are harder to test with `curl` or Postman than a REST route, and error stack traces are less transparent during debugging. The hidden RPC mechanism can confuse engineers unfamiliar with the App Router mental model.
+**Tradeoff:** Workspace history is local to the current browser/device and does not sync across devices.
 
 ---
 
-## Decision 4 — `sandbox="allow-scripts allow-forms allow-popups"` without `allow-same-origin`
+## Decision 4 — Universal Voice Dictation via `MediaRecorder` + Groq `whisper-large-v3-turbo`
 
-**Context:** The generated HTML runs arbitrary JavaScript produced by an AI model. Without sandboxing, that code has full access to the host page's DOM, cookies, and localStorage — a meaningful XSS surface even in a portfolio demo.
+**Context:** v1 relied on `window.SpeechRecognition` / `webkitSpeechRecognition`, which is unsupported in Firefox, unreliable in Safari/iOS, and drops technical vocabulary.
 
-**Decision:** The preview `<iframe>` explicitly omits `allow-same-origin` from its sandbox attribute.
+**Decision:** Record microphone audio via the standard `MediaRecorder` API (`audio/webm` with `audio/mp4` Safari fallback) and transcribe it server-side via Groq's `whisper-large-v3-turbo` (`POST /api/transcribe`).
 
-**Reason:** Without `allow-same-origin`, the iframe is treated as a cross-origin document: its scripts cannot read or write the parent page's DOM, access `document.cookie`, or reach the host's `localStorage`. This prevents even cleverly-crafted AI output from exfiltrating session data or injecting malicious content into the surrounding UI.
+**Reason:** `MediaRecorder` works across all modern desktop and mobile browsers, and `whisper-large-v3-turbo` transcribes technical software specifications and multilingual/Hinglish speech in under a second.
 
-**Tradeoff:** Generated apps themselves cannot persist data via `localStorage` or `sessionStorage`, because those APIs require same-origin access. The system prompt documents this limitation and instructs the model to handle it gracefully (e.g., treat storage as session-scoped), but some prompts will produce apps that appear broken in the preview.
+**Tradeoff:** Transcription happens after the user clicks Stop rather than word-by-word interim browser speech captions, and consumes a small audio API call per recording.
 
 ---
 
 ## What I'd do differently in v2
 
-- **Add response streaming** — Genkit structured output requires the full JSON before returning, which means the user stares at a spinner for 10–20s. In v2, I'd explore streaming the raw HTML tokens and assembling the iframe progressively, accepting that Zod validation would move to post-stream.
-- **Add prompt history in localStorage** — The current stateless design means every page refresh loses previous generations. A simple localStorage array of `{ prompt, code, timestamp }` objects would dramatically improve usability with no backend needed.
-- **Add a fallback model** — Currently, if Gemini is down or rate-limited, the app just fails. A fallback to Gemini 1.5 Flash or a different provider would improve reliability for a live demo.
+- **Incremental AST/DOM diff patching for refinements** — Currently, follow-up edits regenerate the complete HTML file (1.5–3.5s on Groq). Sending targeted search/replace blocks for minor edits on large (>800 line) apps would make iterations sub-second.
+- **Optional cloud permalink sharing** — Add an opt-in "Share Read-Only Link" backed by Upstash Redis / Vercel Blob with content-hash deduplication so users can send live prototypes to teammates without emailing `.html` attachments.
+- **Playwright end-to-end smoke suite in CI** — Automate headless browser verification of `/`, `/studio`, viewport frame switching, and sandboxed error interception on every pull request.
 
 ---
 
-## Explicit non-decisions (deferred to v2)
+## Explicit non-decisions (deferred)
 
 | Feature | Why deferred |
 |---|---|
-| User accounts + saved projects | Requires auth + database; adds significant infrastructure for an MVP whose primary value is the one-shot generation experience |
-| Multi-step refinement / chat | Needs conversation history state and multi-turn prompting; complicates the UI significantly; one-shot covers the core use case |
-| Generated app hosting | Prompt2App is a generator, not a platform; hosting adds backend complexity (storage, compute, abuse prevention) out of scope for v1 |
-| Streaming HTML output | Genkit's structured output contract requires a complete JSON response; streaming raw tokens bypasses schema validation |
+| User accounts & Postgres persistence | Adds OAuth friction and DB maintenance for a tool whose core value is instant, zero-signup prototyping |
+| Multi-file React / Vite zip export | Requires `npm install` and Node.js to run; single-file `.html` runs anywhere with a double-click |
+| Hosting user-generated apps on subdomains | Introduces phishing/abuse moderation and compute billing scope outside an app compiler |
+
+---
+
+<div align="center">
+
+<h3>Tanish Poddar</h3>
+
+<a href="https://tanisheesh.in"><img src="https://img.shields.io/badge/Website-tanisheesh.in-111111?style=flat-square&logo=googlechrome&logoColor=white" alt="Website"></a>
+<a href="https://linkedin.com/in/tanisheesh"><img src="https://img.shields.io/badge/LinkedIn-tanisheesh-0A66C2?style=flat-square" alt="LinkedIn"></a>
+<a href="https://github.com/tanisheesh"><img src="https://img.shields.io/badge/GitHub-tanisheesh-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub"></a>
+<a href="mailto:hi@tanisheesh.in"><img src="https://img.shields.io/badge/Email-hi%40tanisheesh.in-EA4335?style=flat-square&logo=gmail&logoColor=white" alt="Email"></a>
+
+</div>
