@@ -37,10 +37,17 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.genkit/*
+# env files
+.env
+.env.local
+.env.*.local
 .env*
 !.env.example
 
-# firebase
+# launch video / generated media artifacts
+brag-output/
+
+# legacy firebase / genkit artifacts
+.genkit/*
 firebase-debug.log
 firestore-debug.log
