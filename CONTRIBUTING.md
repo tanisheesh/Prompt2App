@@ -22,7 +22,7 @@ Full instructions are in [docs/SETUP.md](docs/SETUP.md). Short version:
 ```bash
 git clone https://github.com/<your-username>/Prompt2App
 cd Prompt2App
-pnpm install
+pnpm install --frozen-lockfile
 cp .env.example .env.local
 pnpm dev
 ```
@@ -35,7 +35,7 @@ pnpm dev
 
    | Branch prefix | Use for |
    |---|---|
-   | `feat/` | new feature, e.g. `feat/export-zip` |
+   | `feat/` | new feature, e.g. `feat/diff-patching` |
    | `fix/` | bug fix, e.g. `fix/iframe-resize` |
    | `docs/` | documentation only |
    | `chore/` | tooling, config, dependencies |
@@ -48,7 +48,7 @@ pnpm dev
    pnpm run typecheck && pnpm run build
    ```
 
-4. **Open a pull request** against `main`. The PR template will guide you.
+4. **Open a pull request** against `main`. Use a clean **past-tense** PR title (e.g. `Added keyboard shortcut help popover in Studio`). The PR template will guide you.
 
 ---
 
@@ -68,7 +68,7 @@ Commits follow an emoji-prefixed format:
 | ♻️ | Refactor | `♻️ groq: extract html output cleaner` |
 | 📚 | Docs | `📚 add deploy guide` |
 | 🧪 | Tests | `🧪 cover empty-state api response` |
-| 🔨 | Chore / config | `🔨 bump node to 22 in ci` |
+| 🔨 | Chore / config | `🔨 add security headers config` |
 | 👆 | Dependency update | `👆 upgrade groq-sdk to 1.6` |
 | 🔒 | Security | `🔒 isolate preview iframe origin` |
 | 💀 | Code deletion | `💀 remove legacy genkit flow` |
@@ -79,10 +79,9 @@ Breaking changes add a line `🚨 BREAKING CHANGE: <what breaks>` in the commit 
 
 ## Code style
 
+- Follow the rules in [AGENTS.md](AGENTS.md) (`kebab-case` file names, `camelCase` variables/functions, `PascalCase` components/types, files under ~300 lines, no `@ts-ignore` or silent `catch {}`).
 - Run `pnpm run typecheck` and `pnpm run build` before committing. CI runs the same checks.
-- Follow the existing file structure and patterns.
-- TypeScript: `kebab-case` file names, `camelCase` variables and functions, `PascalCase` React components and types.
-- No secrets in code. Use env vars and add new ones to `.env.example`.
+- No secrets in code. Use `.env.local` locally and keep `.env.example` updated with empty values.
 - Update docs when behaviour, setup or env vars change.
 
 ---
@@ -91,7 +90,7 @@ Breaking changes add a line `🚨 BREAKING CHANGE: <what breaks>` in the commit 
 
 - [ ] Branch is up to date with `main`
 - [ ] `pnpm run typecheck` and `pnpm run build` pass locally
-- [ ] Commits follow the format above
+- [ ] Commits follow the format above and PR title is past-tense plain English
 - [ ] Docs / `.env.example` / `CHANGELOG.md` updated if needed
 - [ ] PR description explains **what** and **why**
 

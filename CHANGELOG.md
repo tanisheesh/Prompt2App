@@ -4,6 +4,18 @@ All notable changes to **Prompt2App** are documented here.
 
 ---
 
+## [Unreleased]
+
+### 🔒 Security
+- Added `vercel.json` HTTP security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security`, and `Permissions-Policy` scoped to `microphone=(self)`)
+- Added CodeQL SAST scanning, Gitleaks secret scanning, and PR dependency review gates in GitHub Actions
+- Cleared placeholder dummy token in `.env.example` and expanded `.gitignore` coverage for `.env` variants and `brag-output/`
+
+### 📚 Docs
+- Added runtime `AGENTS.md` contract and upgraded `README.md`, `PRD.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `SETUP.md`, and `DEPLOY.md` to v2 engineering standards with Mermaid diagrams, API contracts, and scale ceilings
+
+---
+
 ## [2.0.0] — 2026-11-15
 
 ### ✨ Added
@@ -44,6 +56,7 @@ All notable changes to **Prompt2App** are documented here.
 
 ---
 
+[Unreleased]: https://github.com/tanisheesh/Prompt2App/compare/v2.0.0...HEAD
 [2.0.0]: https://github.com/tanisheesh/Prompt2App/releases/tag/v2.0.0
 [1.0.0]: https://github.com/tanisheesh/Prompt2App/releases/tag/v1.0.0
 

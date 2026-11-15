@@ -47,16 +47,16 @@ You'll be kept updated throughout, and credited in the release notes once it's f
 
 - This repository's source code
 - The live deployment at `https://prompt2app.tanisheesh.in`
-- Server API routes (`/api/generate`, `/api/enhance`, `/api/transcribe`), sandboxed iframe isolation (`src/lib/sandbox.ts`), and server secret handling
+- Server API routes (`/api/generate`, `/api/enhance`, `/api/transcribe`), cross-origin iframe sandbox isolation (`src/lib/sandbox.ts`, `src/components/studio/preview-canvas.tsx`), HTTP security headers (`vercel.json`), and `GROQ_API_KEY` server isolation
 
 **Out of scope**
 
-- Vulnerabilities in third-party services (Vercel, Groq Cloud, GitHub, public CDNs referenced inside user-generated HTML). Report those to the vendor.
+- Vulnerabilities in third-party services (Vercel, Groq Cloud, GitHub, or public CDNs referenced inside user-generated HTML). Report those to the vendor.
 - Denial-of-service, spam or volumetric attacks
 - Social engineering
 - Findings from automated scanners with no demonstrated impact
 
-Please act in good faith: don't degrade the service while testing.
+Please act in good faith: don't access or modify other users' data, and don't degrade the service while testing.
 
 ---
 
