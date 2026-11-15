@@ -1,3 +1,9 @@
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║  TANISH'S SETUP TOOLKIT · tanisheesh.in                              ║
+# ║  Bug report form. Goes to: <repo>/.github/ISSUE_TEMPLATE/            ║
+# ║  Works as-is in any repo, no placeholders to fill.                   ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+
 name: 🐛 Bug report
 description: Something isn't working as expected
 title: "🐛 "
@@ -55,8 +61,6 @@ body:
       label: Environment
       description: Browser / OS / runtime version, whatever is relevant.
       placeholder: Chrome 135 on Windows 11 · Node 22
-    validations:
-      required: false
 
   - type: textarea
     id: logs

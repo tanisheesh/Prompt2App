@@ -1,3 +1,10 @@
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║  TANISH'S SETUP TOOLKIT · tanisheesh.in                              ║
+# ║  Editor settings. Goes to: <repo>/.editorconfig                      ║
+# ║  Works as-is. VS Code needs the "EditorConfig" extension; JetBrains  ║
+# ║  and most other editors support it natively.                         ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+
 root = true
 
 # Defaults for every file

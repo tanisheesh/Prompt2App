@@ -1,3 +1,9 @@
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║  TANISH'S SETUP TOOLKIT · tanisheesh.in                              ║
+# ║  Feature request form. Goes to: <repo>/.github/ISSUE_TEMPLATE/       ║
+# ║  Works as-is in any repo, no placeholders to fill.                   ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+
 name: ✨ Feature request
 description: Suggest an idea or improvement
 title: "✨ "
