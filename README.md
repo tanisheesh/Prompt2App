@@ -10,11 +10,17 @@
 
 <p align="center">
   <a href="https://prompt2app.tanisheesh.in">
-    <img src="https://img.shields.io/badge/live_demo-10B981-10B981?style=flat-square" alt="Live Demo">
+    <img src="https://img.shields.io/badge/live_demo-visit-10B981?style=flat-square" alt="Live Demo">
+  </a>
+  <a href="https://github.com/tanisheesh/Prompt2App/actions/workflows/ci.yml">
+    <img src="https://github.com/tanisheesh/Prompt2App/actions/workflows/ci.yml/badge.svg" alt="CI">
+  </a>
+  <a href="https://github.com/tanisheesh/Prompt2App/actions/workflows/codeql.yml">
+    <img src="https://github.com/tanisheesh/Prompt2App/actions/workflows/codeql.yml/badge.svg" alt="CodeQL">
   </a>
   <img src="https://img.shields.io/badge/Next.js-black?style=flat-square&logo=next.js" alt="Next.js">
-  <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React">
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React">
   <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
   <img src="https://img.shields.io/badge/Groq-F55036?style=flat-square" alt="Groq">
   <img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Vercel">
@@ -25,7 +31,7 @@
 
 ## What is Prompt2App?
 
-Spinning up an interactive internal utility, analytics dashboard, calculator, or prototype usually requires project scaffolding, npm installs, and hundreds of lines of boilerplate before you can even test the idea. **Prompt2App** turns a plain-English or spoken prompt into a complete, interactive HTML5 application that streams live at 500–1,000 tokens/sec via Groq LPU (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, and `openai/gpt-oss-20b`). You can test it immediately across desktop, tablet, and mobile viewports inside an isolated studio workbench, iterate conversationally across saved version snapshots (`v1`, `v2`, `v3`), and export a single `.html` file that runs offline in any browser forever.
+Spinning up an interactive internal utility, analytics dashboard, calculator, or prototype usually requires project scaffolding, package installs, and hundreds of lines of boilerplate before you can test the idea. **Prompt2App** converts plain-English or spoken specifications into complete, runnable HTML5 applications streamed live from Groq LPU (`openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-20b`), renders them across desktop, tablet, and mobile frames in an isolated browser sandbox with version history (`v1`, `v2`, `v3`), and exports a single offline-ready `.html` file.
 
 > **Live demo →** [https://prompt2app.tanisheesh.in](https://prompt2app.tanisheesh.in)
 
@@ -33,10 +39,22 @@ Spinning up an interactive internal utility, analytics dashboard, calculator, or
 
 ## What you get
 
-- **Real-time Groq LPU code streaming** — Streams complete HTML5, Tailwind CSS, and JavaScript applications at 500–1,000 tok/s with model switching (`GPT-OSS 120B`, `Qwen 3.8 27B`, `GPT-OSS 20B`), automatic fallback, and upstream abort cancellation.
-- **Conversational edits & immutable version timeline** — Request follow-up changes (*"Add CSV export"*, *"Add plan filters"*) to create `v2`, `v3` snapshots stored locally in your browser so you can roll back anytime.
-- **Universal Whisper V3 Turbo voice input & prompt enhancer** — Dictate prompts in Chrome, Firefox, Safari, or mobile via `MediaRecorder` + Groq `whisper-large-v3-turbo`, or expand a 3-word idea into a full product specification in one click.
-- **Self-healing sandboxed workbench** — Preview across Desktop (`100%`), Tablet (`768px`), and Mobile (`390px`) frames in an isolated cross-origin iframe equipped with an injected storage shim and 1-click AI runtime error patching.
+- **Real-time Groq LPU streaming** — Streams complete HTML5, Tailwind CSS, and JavaScript apps (`~450–1,000 tok/s`) with model switching, 3-model automatic fallback, and upstream abort cancellation.
+- **Conversational edits & immutable snapshots** — Request follow-up refinements (*"Add CSV export"*, *"Improve mobile layout"*) to create `v2`, `v3` snapshots persisted in browser `localStorage`.
+- **Cross-browser Whisper V3 Turbo voice & prompt enhancer** — Record prompts via `MediaRecorder` + `whisper-large-v3-turbo` in any browser, or expand a short idea into a full specification in one click.
+- **Self-healing sandboxed workbench** — Preview Desktop (`100%`), Tablet (`768px`), and Mobile (`390px`) frames inside a cross-origin `<iframe srcDoc>` with an injected storage shim and 1-click AI runtime error patching.
+
+---
+
+## By the numbers
+
+| Metric | Value | Source |
+|---|---|---|
+| Route execution caps | `60s` (`/api/generate`) · `30s` (`/api/enhance`, `/api/transcribe`) | `src/app/api/*/route.ts` |
+| Groq SDK timeout & retries | `55s` timeout · `maxRetries: 2` · 3-model fallback chain | `src/lib/groq.ts` |
+| Completion token caps | `32,768` (`GPT-OSS 120B/20B`) · `16,384` (`Qwen 3.8 27B`) · `600` (Enhance) | `src/lib/groq.ts`, `src/app/api/enhance/route.ts` |
+| Request & audio bounds | `12,000` chars prompt · `250,000` chars refine HTML · `300 B–15 MB` audio | `src/app/api/*/route.ts` |
+| Local snapshot capacity | Up to `25` projects · `15` versions/project with quota-safe pruning | `src/lib/storage.ts` |
 
 ---
 
@@ -44,26 +62,26 @@ Spinning up an interactive internal utility, analytics dashboard, calculator, or
 
 | Layer | Tech |
 |---|---|
-| Frontend | Next.js 16 (App Router, Turbopack) · React 19 · TypeScript 7 · Tailwind CSS 3 · Radix UI |
-| Backend API | Next.js Route Handlers (`ReadableStream` streaming) · Zod request validation |
-| AI & Speech | Groq Cloud SDK (`groq-sdk`) · `openai/gpt-oss-120b` · `qwen/qwen3.8-27b` · `openai/gpt-oss-20b` · `whisper-large-v3-turbo` |
-| Infra & Hosting | Vercel · GitHub Actions CI · Dependabot Auto-Merge |
+| Frontend | Next.js `16.4.6` (App Router, Turbopack) · React `19.3.1` · TypeScript `7.0.2` · Tailwind CSS `3.4.19` · Radix UI |
+| Backend API | Next.js Node.js Route Handlers (`ReadableStream`) · Zod `4.6.7` boundary validation |
+| AI & Speech | `groq-sdk` `1.6.0` · `openai/gpt-oss-120b` · `qwen/qwen3.8-27b` · `openai/gpt-oss-20b` · `whisper-large-v3-turbo` |
+| Infra & Security | Vercel · `vercel.json` security headers · GitHub Actions (CI, CodeQL, Gitleaks, Dependency Review, Renovate) |
 
 ---
 
 ## Engineering Decisions
 
 **Why migrate from Firebase Genkit + Gemini Server Actions to streaming Groq Route Handlers?**
-Non-streaming Server Actions forced users to stare at a spinner for 10–20 seconds until the entire document finished generating, while pulling in heavy `genkit` and `firebase` packages. Streaming raw tokens from Groq's LPU over a `ReadableStream` (`POST /api/generate`) delivers 500–1,000 tok/s with live line-count telemetry, multi-model fallback, and instant upstream token cancellation via `AbortSignal` when the user clicks Stop.
+Non-streaming Server Actions forced users to wait 10–20 seconds behind a spinner while pulling heavy `genkit` and `firebase` packages. Streaming tokens over `ReadableStream` (`POST /api/generate`) delivers live line-count and `tok/s` telemetry, 3-model fallback, and instant upstream stream abort via `req.signal`.
 
 **Why omit `allow-same-origin` on the preview iframe AND inject an in-memory `localStorage` shim?**
-AI-generated code is untrusted JavaScript — omitting `allow-same-origin` isolates the host page's DOM, cookies, and workspace storage from XSS. Because browsers throw a `SecurityError` when opaque-origin scripts touch `window.localStorage`, `injectSandboxRuntime()` injects a transparent in-memory `Storage` polyfill and `window.onerror` `postMessage` bridge so stateful generated apps work seamlessly in preview and use real browser `localStorage` once downloaded.
+AI-generated scripts are untrusted JavaScript, so omitting `allow-same-origin` prevents XSS from reading host cookies or `prompt2app_projects_v2` storage. Because opaque-origin iframes throw `SecurityError` on `window.localStorage`, `injectSandboxRuntime()` injects an in-memory `Storage` polyfill and `postMessage` error bridge while keeping downloaded `.html` files clean.
 
 **Why `MediaRecorder` + Groq `whisper-large-v3-turbo` instead of the browser Web Speech API?**
-`window.SpeechRecognition` is Chrome-bound and fails silently in Firefox, Safari, and many mobile webviews. Capturing audio chunks through standard `MediaRecorder` (`audio/webm` / `audio/mp4`) and transcribing server-side via `whisper-large-v3-turbo` makes voice dictation reliable across every modern desktop and mobile browser.
+`window.SpeechRecognition` is Chrome-bound and fails across Firefox, Safari, and many mobile webviews. Recording `audio/webm` / `audio/mp4` chunks via `MediaRecorder` and transcribing server-side makes voice dictation reliable across all modern browsers.
 
-**What would you do differently in v2?**
-Add AST-verified incremental HTML/JS patching for follow-up edits on large (>800 line) applications so small CSS or text tweaks apply in under 500ms without regenerating the entire document.
+**What would you do differently in the next iteration?**
+Add AST-verified incremental DOM/script patching so minor edits on large (`> 800` line) apps apply sub-second without full regeneration, add Upstash per-IP rate limiting on `/api/*`, and introduce Vitest + Playwright E2E/a11y checks.
 
 ---
 
@@ -71,14 +89,14 @@ Add AST-verified incremental HTML/JS patching for follow-up edits on large (>800
 
 | Document | Description |
 |---|---|
-| [PRD](docs/PRD.md) | Product requirements — goals, user stories, non-goals |
-| [Architecture](docs/ARCHITECTURE.md) | System design, data flow, component breakdown |
-| [Decisions](docs/DECISIONS.md) | Every major technical decision and why |
-| [Setup](docs/SETUP.md) | Local dev setup and env vars |
-| [Deploy](docs/DEPLOY.md) | Production deployment, domains, rollback |
-| [Contributing](CONTRIBUTING.md) | How to propose changes |
-| [Changelog](CHANGELOG.md) | What changed in each release |
-| [Security](SECURITY.md) | How to report a vulnerability |
+| [PRD](docs/PRD.md) | Product requirements — quantified baseline, acceptance criteria, edge cases, quota math |
+| [Architecture](docs/ARCHITECTURE.md) | System topology (Mermaid), API contracts, client storage schema, LLM safety, scale ceilings |
+| [Decisions](docs/DECISIONS.md) | Architecture Decision Records — comparison matrices, tradeoffs, and reversal triggers |
+| [Setup](docs/SETUP.md) | Local dev onboarding, env var matrix, verification commands, and troubleshooting |
+| [Deploy](docs/DEPLOY.md) | Vercel topology, custom domain wiring, smoke checks, rollback, and incident runbooks |
+| [Contributing](CONTRIBUTING.md) | Branching, emoji commit style, and PR checklist |
+| [Changelog](CHANGELOG.md) | Release history mapped to commit history |
+| [Security](SECURITY.md) | Vulnerability reporting policy and security scope |
 
 ---
 
