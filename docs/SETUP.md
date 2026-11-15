@@ -1,69 +1,102 @@
 # Local Setup — Prompt2App
 
-> **Just want to try it?** Use the live demo at [https://prompt2app.tanisheesh.in](https://prompt2app.tanisheesh.in) — no setup needed.
-> This guide is for running Prompt2App locally or self-hosting it.
+> **Just want to try it?** Use the live deployment at [https://prompt2app.tanisheesh.in](https://prompt2app.tanisheesh.in) — zero setup needed.
+> This guide covers running **Prompt2App** locally, verifying builds, and troubleshooting common local issues.
 
 ---
 
-## Prerequisites
+## Prerequisites & Versions
 
-- Node.js 20+ (Node 22 recommended)
-- `pnpm` 9+ (`corepack enable`)
-- A Groq Cloud API key (`GROQ_API_KEY`)
+- **Node.js `20+`** (`22.x` recommended, matches CI)
+- **`pnpm` `10+`** (enable via `corepack enable`)
+- A **Groq Cloud API key** (`GROQ_API_KEY`) — free tier works out of the box
+
+*(Prompt2App is intentionally stateless on the server and requires no Docker, Postgres, Redis, or seed scripts.)*
 
 ---
 
-## 1. Clone and install
+## 1. Clone & Install
 
 ```bash
 git clone https://github.com/tanisheesh/Prompt2App
 cd Prompt2App
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 ---
 
-## 2. Environment variables
+## 2. Environment Variables
 
-Copy `.env.example` to `.env.local` and fill in your Groq API key:
+Copy `.env.example` to `.env.local` and add your Groq API key:
 
 ```bash
 cp .env.example .env.local
 ```
 
-| Variable | Where to get it |
-|---|---|
-| `GROQ_API_KEY` | [console.groq.com/keys](https://console.groq.com/keys) → Create API Key |
+| Variable | Type / Format | Required | Scope | Local Default / Source |
+|---|---|---|---|---|
+| `GROQ_API_KEY` | String (`gsk_...`) | ✅ | Server-only | [console.groq.com/keys](https://console.groq.com/keys) → Create API Key |
+
+> Never commit `.env` or `.env.local`, and never expose server secrets with `NEXT_PUBLIC_`.
 
 ---
 
-## 3. Run locally
+## 3. Run Locally
 
 ```bash
 pnpm dev
 ```
 
-Prompt2App will be running at `http://localhost:9002` (Landing Page at `/` and Studio Workbench at `/studio`).
+Prompt2App runs on `http://localhost:9002`:
+- `/` — Product landing page & composer
+- `/studio` — Full-screen interactive App Builder Studio
+- `/api/generate`, `/api/enhance`, `/api/transcribe` — Server Route Handlers
 
-Verify type safety and production build locally before committing:
+---
+
+## 4. Run Verification & Checks
+
+Run the exact verification commands enforced by CI before committing:
 
 ```bash
-pnpm typecheck
-pnpm build
+pnpm run typecheck   # Runs next typegen && tsc --noEmit (TypeScript 7 strict mode)
+pnpm run build       # Runs next build (Turbopack production bundle)
+```
+
+*(Note: Automated `lint` and unit/E2E `test` scripts are not yet configured in `package.json`.)*
+
+If `coderabbit` CLI is installed locally, optionally run a pre-PR review:
+
+```bash
+coderabbit review --agent --uncommitted
 ```
 
 ---
 
-## 4. Deploy to production
+## 5. Known Local-Only Limitations
 
-See [DEPLOY.md](DEPLOY.md) for production deployment, custom domain, and rollback steps.
+- **Voice dictation requires a secure context:** `navigator.mediaDevices.getUserMedia` works on `http://localhost:9002` and `https://`, but fails if accessed over a plain LAN IP (`http://192.168.x.x:9002`).
+- **Ephemeral storage inside Studio preview:** Because `<iframe srcDoc>` omits `allow-same-origin`, generated apps run against an in-memory `Storage` polyfill inside Studio and reset on preview refresh; downloaded `.html` files use real persistent browser `localStorage`.
+- **Edge security headers:** Headers defined in `vercel.json` apply on Vercel edge responses, not `next dev`.
 
 ---
 
-## Known local-only limitations
+## 6. Troubleshooting
 
-- Voice dictation (`MediaRecorder` / `navigator.mediaDevices.getUserMedia`) requires a secure context: `http://localhost:9002` works in all browsers, but accessing a LAN IP (`http://192.168.x.x:9002`) without HTTPS will block microphone access.
-- Inside the Studio preview `<iframe>`, `localStorage` uses an in-memory sandbox polyfill (`src/lib/sandbox.ts`) so state resets on preview refresh; downloaded `.html` files use persistent browser `localStorage`.
+| Symptom / Exact Error | Root Cause | Fix |
+|---|---|---|
+| `GROQ_API_KEY is not configured. Add GROQ_API_KEY to your .env.local file.` (`500`) | Missing or blank `GROQ_API_KEY` in `.env.local` | Add a valid key from `console.groq.com/keys` to `.env.local` and restart `pnpm dev` |
+| `Microphone permission needed` / mic fails on LAN URL | Browser denied mic access or non-HTTPS LAN origin | Open `http://localhost:9002` (or HTTPS) and allow microphone permission |
+| `Recording was too short. Please speak for at least 1 second.` (`400`) | Audio file under `300 B` (server) / `400 B` (client) | Hold recording for > 1s and verify working microphone input |
+| `Audio recording exceeds the 15 MB size limit.` (`413`) | Spoken prompt exceeded `MAX_AUDIO_BYTES` (`15 MB`) | Keep voice recordings shorter and split long specs |
+| `Current code is too large to refine in a single request.` (`400`) | `currentCode` exceeded `250,000` characters | Start a fresh prompt or trim generated code size before refining |
+| Port `9002` already in use | Another process is bound to `9002` | Stop the other process or run `pnpm exec next dev -p 3000` |
+
+---
+
+## 7. Deploy to Production
+
+See [DEPLOY.md](DEPLOY.md) for Vercel deployment, custom domain setup, smoke checks, and rollback steps.
 
 ---
 
